@@ -1,6 +1,7 @@
 const NOME_DELA = "Bia";
 const INICIAL_DELA = "B";
 const DATA_INICIO_NAMORO = "2026-01-24T15:30:00-03:00";
+const TEMPO_LOADING_MS = 7600;
 
 const FRASES_ROMANTICAS = {
   intro: "Desde o primeiro dia, cada detalhe ficou mais bonito porque existe voce.",
@@ -65,9 +66,7 @@ const ESTAGIOS_FLOR = [
 ];
 
 const loadingScreen = document.querySelector("#loadingScreen");
-const heartLoader = document.querySelector("#heartLoader");
 const mainSite = document.querySelector("#mainSite");
-const loadingInitial = document.querySelector("#loadingInitial");
 const partnerNameTitle = document.querySelector("#partnerNameTitle");
 const romanticIntro = document.querySelector("#romanticIntro");
 const daysTogether = document.querySelector("#daysTogether");
@@ -80,28 +79,12 @@ const prevPhoto = document.querySelector("#prevPhoto");
 const nextPhoto = document.querySelector("#nextPhoto");
 const carouselDots = document.querySelector("#carouselDots");
 const romanticMessage = document.querySelector("#romanticMessage");
+const heartWebgl = document.querySelector("#heartWebgl");
+const heartParticlePath = document.querySelector("#heartParticlePath");
 
 let fotoAtual = 0;
 let intervaloCarrossel;
-
-function criarCoracaoDePalavras() {
-  const pontos = 92;
-  const escala = Math.min(11, heartLoader.clientWidth / 38);
-
-  for (let i = 0; i < pontos; i += 1) {
-    const t = (Math.PI * 2 * i) / pontos;
-    const x = 16 * Math.sin(t) ** 3;
-    const y = 13 * Math.cos(t) - 5 * Math.cos(2 * t) - 2 * Math.cos(3 * t) - Math.cos(4 * t);
-    const palavra = document.createElement("span");
-
-    palavra.className = "heart-word";
-    palavra.textContent = i % 3 === 0 ? "I love you" : "te amo";
-    palavra.style.transform = `translate(calc(-50% + ${x * escala}px), calc(-50% + ${-y * escala}px)) rotate(${x * 1.8}deg)`;
-    palavra.style.animationDelay = `${120 + i * 11}ms`;
-
-    heartLoader.appendChild(palavra);
-  }
-}
+let pararAnimacaoLoading = () => {};
 
 function calcularDiasJuntos(dataInicial) {
   const inicio = new Date(dataInicial);
@@ -116,7 +99,6 @@ function atualizarInformacoesDoCasal() {
   const estagio = ESTAGIOS_FLOR.find((item) => dias <= item.limite);
 
   document.title = `Para ${NOME_DELA}`;
-  loadingInitial.textContent = INICIAL_DELA;
   partnerNameTitle.textContent = NOME_DELA;
   romanticIntro.textContent = FRASES_ROMANTICAS.intro;
   daysTogether.textContent = `Estamos juntos ha ${dias} ${dias === 1 ? "dia" : "dias"}`;
@@ -184,11 +166,253 @@ function configurarCarrossel() {
   mostrarFoto(0);
 }
 
+function configurarAnimacaoLoading() {
+  const THREE = window.THREE;
+  const gsap = window.gsap;
+
+  if (!loadingScreen || !heartWebgl || !heartParticlePath || !THREE || !gsap) {
+    configurarAnimacaoCanvasFallback();
+    return;
+  }
+
+  try {
+    const scene = new THREE.Scene();
+    const camera = new THREE.PerspectiveCamera(
+      75,
+      window.innerWidth / window.innerHeight,
+      0.1,
+      5000
+    );
+    const renderer = new THREE.WebGLRenderer({
+      antialias: true,
+      powerPreference: "high-performance",
+    });
+    const controlsWebGL = window.THREE.OrbitControls
+      ? new THREE.OrbitControls(camera, renderer.domElement)
+      : null;
+    const tl = gsap.timeline({
+      repeat: -1,
+      yoyo: true,
+    });
+    const length = heartParticlePath.getTotalLength();
+    const vertices = [];
+    let animationFrameId = 0;
+
+    const ajustarDistanciaDaCamera = () => {
+      camera.position.z = window.innerWidth < window.innerHeight ? 960 : 500;
+    };
+
+    ajustarDistanciaDaCamera();
+    renderer.setPixelRatio(window.devicePixelRatio > 1 ? 2 : 1);
+    renderer.setSize(window.innerWidth, window.innerHeight);
+    heartWebgl.appendChild(renderer.domElement);
+
+    if (controlsWebGL) {
+      controlsWebGL.enableDamping = true;
+    }
+
+    for (let i = 0; i < length; i += 0.1) {
+      const point = heartParticlePath.getPointAtLength(i);
+      const vector = new THREE.Vector3(point.x, -point.y, 0);
+
+      vector.x += (Math.random() - 0.5) * 30;
+      vector.y += (Math.random() - 0.5) * 30;
+      vector.z += (Math.random() - 0.5) * 70;
+
+      vertices.push(vector);
+
+      tl.from(
+        vector,
+        {
+          x: 600 / 2,
+          y: -552 / 2,
+          z: 0,
+          ease: "power2.inOut",
+          duration: "random(2, 5)",
+        },
+        i * 0.002
+      );
+    }
+
+    const geometry = new THREE.BufferGeometry().setFromPoints(vertices);
+    const material = new THREE.PointsMaterial({
+      color: 0xee5282,
+      blending: THREE.AdditiveBlending,
+      size: 3,
+    });
+    const particles = new THREE.Points(geometry, material);
+
+    particles.position.x -= 600 / 2;
+    particles.position.y += 552 / 2;
+    scene.add(particles);
+
+    const rotationTween = gsap.fromTo(
+      scene.rotation,
+      {
+        y: -0.2,
+      },
+      {
+        y: 0.2,
+        repeat: -1,
+        yoyo: true,
+        ease: "power2.inOut",
+        duration: 3,
+      }
+    );
+
+    const onWindowResize = () => {
+      ajustarDistanciaDaCamera();
+      camera.aspect = window.innerWidth / window.innerHeight;
+      camera.updateProjectionMatrix();
+      renderer.setSize(window.innerWidth, window.innerHeight);
+    };
+
+    const render = () => {
+      animationFrameId = window.requestAnimationFrame(render);
+      geometry.setFromPoints(vertices);
+      if (controlsWebGL) {
+        controlsWebGL.update();
+      }
+      renderer.render(scene, camera);
+    };
+
+    window.addEventListener("resize", onWindowResize, false);
+    animationFrameId = window.requestAnimationFrame(render);
+
+    pararAnimacaoLoading = () => {
+      window.cancelAnimationFrame(animationFrameId);
+      window.removeEventListener("resize", onWindowResize);
+      tl.kill();
+      rotationTween.kill();
+      if (controlsWebGL) {
+        controlsWebGL.dispose();
+      }
+      geometry.dispose();
+      material.dispose();
+      renderer.dispose();
+      renderer.domElement.remove();
+    };
+  } catch (error) {
+    configurarAnimacaoCanvasFallback();
+  }
+}
+
+function configurarAnimacaoCanvasFallback() {
+  if (!loadingScreen || !heartWebgl || !heartParticlePath) {
+    return;
+  }
+
+  const canvas = document.createElement("canvas");
+  const context = canvas.getContext("2d");
+  const pathLength = heartParticlePath.getTotalLength();
+  const particles = [];
+  let animationFrameId = 0;
+  let startTime = performance.now();
+
+  heartWebgl.appendChild(canvas);
+
+  const resize = () => {
+    const pixelRatio = window.devicePixelRatio > 1 ? 2 : 1;
+
+    canvas.width = Math.floor(window.innerWidth * pixelRatio);
+    canvas.height = Math.floor(window.innerHeight * pixelRatio);
+    canvas.style.width = `${window.innerWidth}px`;
+    canvas.style.height = `${window.innerHeight}px`;
+    context.setTransform(pixelRatio, 0, 0, pixelRatio, 0, 0);
+  };
+
+  const scale = () => Math.min(window.innerWidth / 760, window.innerHeight / 710, 1.05);
+
+  for (let distance = 0; distance < pathLength; distance += 0.45) {
+    const point = heartParticlePath.getPointAtLength(distance);
+
+    particles.push({
+      x: point.x + (Math.random() - 0.5) * 30,
+      y: point.y + (Math.random() - 0.5) * 30,
+      z: (Math.random() - 0.5) * 70,
+      delay: distance * 2,
+      duration: 2000 + Math.random() * 3000,
+    });
+  }
+
+  const easeInOut = (value) => {
+    const clamped = Math.max(0, Math.min(1, value));
+    return clamped < 0.5
+      ? 2 * clamped * clamped
+      : 1 - ((-2 * clamped + 2) ** 2) / 2;
+  };
+
+  const render = (time) => {
+    const elapsed = (time - startTime) % 7600;
+    const centerX = window.innerWidth / 2;
+    const centerY = window.innerHeight / 2;
+    const currentScale = scale();
+
+    context.clearRect(0, 0, window.innerWidth, window.innerHeight);
+    context.fillStyle = "#ee5282";
+
+    particles.forEach((particle) => {
+      const cycle = particle.duration * 2;
+      const local = Math.max(0, (elapsed - particle.delay) % cycle);
+      const forward = local <= particle.duration;
+      const rawProgress = forward ? local / particle.duration : 1 - ((local - particle.duration) / particle.duration);
+      const progress = easeInOut(rawProgress);
+      const startX = 300;
+      const startY = 276;
+      const x = startX + (particle.x - startX) * progress;
+      const y = startY + (particle.y - startY) * progress;
+      const projectedScale = currentScale * (1 + particle.z / 900);
+
+      context.globalAlpha = Math.max(0.2, progress);
+      context.fillRect(
+        centerX + (x - 300) * projectedScale,
+        centerY + (y - 276) * projectedScale,
+        2.4,
+        2.4
+      );
+    });
+
+    context.globalAlpha = 1;
+    animationFrameId = window.requestAnimationFrame(render);
+  };
+
+  resize();
+  window.addEventListener("resize", resize, false);
+  animationFrameId = window.requestAnimationFrame(render);
+
+  pararAnimacaoLoading = () => {
+    window.cancelAnimationFrame(animationFrameId);
+    window.removeEventListener("resize", resize);
+    canvas.remove();
+  };
+}
+
 function revelarSite() {
   window.setTimeout(() => {
+    if (mainSite) {
+      mainSite.classList.add("is-visible");
+    }
+
+    if (!loadingScreen) {
+      return;
+    }
+
     loadingScreen.classList.add("is-hidden");
-    mainSite.classList.add("is-visible");
-  }, 3600);
+    loadingScreen.setAttribute("aria-hidden", "true");
+
+    let overlayRemovido = false;
+    const removerOverlay = () => {
+      if (overlayRemovido) {
+        return;
+      }
+
+      overlayRemovido = true;
+      pararAnimacaoLoading();
+      loadingScreen.remove();
+    };
+
+    window.setTimeout(removerOverlay, 120);
+  }, TEMPO_LOADING_MS);
 }
 
 flowerImage.addEventListener("error", () => {
@@ -196,7 +420,7 @@ flowerImage.addEventListener("error", () => {
   flowerImage.alt = "Adicione os GIFs em assets/fotosFlor com os nomes flor.gif, flor2.gif, flor3.gif e flor4.gif.";
 });
 
-criarCoracaoDePalavras();
+configurarAnimacaoLoading();
 atualizarInformacoesDoCasal();
 configurarCarrossel();
 revelarSite();

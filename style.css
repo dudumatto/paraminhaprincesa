@@ -3,9 +3,7 @@
 :root {
   --bg: #050008;
   --bg-deep: #12000f;
-  --wine: #2a071f;
   --panel: rgba(255, 245, 252, 0.08);
-  --panel-strong: rgba(255, 245, 252, 0.12);
   --panel-border: rgba(255, 158, 218, 0.24);
   --pink: #ff4fb8;
   --pink-soft: #ff9bd8;
@@ -13,7 +11,6 @@
   --lilac: #b477ff;
   --text: #fff7fd;
   --muted: #d7bfd2;
-  --shadow: rgba(255, 79, 184, 0.32);
   --radius-lg: 2rem;
   --radius-md: 1.35rem;
 }
@@ -75,12 +72,15 @@ textarea {
 .loading-screen {
   position: fixed;
   inset: 0;
-  z-index: 20;
-  display: grid;
-  place-items: center;
+  z-index: 9999;
+  width: 100vw;
+  height: 100vh;
+  min-height: 100dvh;
   overflow: hidden;
   background: #000;
-  transition: opacity 900ms ease, visibility 900ms ease;
+  opacity: 1;
+  visibility: visible;
+  pointer-events: auto;
 }
 
 .loading-screen.is-hidden {
@@ -89,45 +89,21 @@ textarea {
   pointer-events: none;
 }
 
-.heart-loader {
-  position: relative;
-  width: min(88vw, 34rem);
-  aspect-ratio: 1;
-  animation: heartEntrance 1800ms ease both, heartPulse 2400ms ease-in-out infinite 1700ms;
+.heart-source {
+  position: absolute;
+  display: none;
 }
 
-.heart-word {
+.heart-webgl,
+.heart-webgl canvas {
   position: absolute;
-  left: 50%;
-  top: 50%;
-  color: var(--pink);
-  font-size: clamp(0.55rem, 2.2vw, 0.95rem);
-  font-weight: 800;
-  line-height: 1;
-  text-shadow: 0 0 0.7rem var(--pink), 0 0 1.4rem var(--shadow);
-  white-space: nowrap;
-  transform: translate(-50%, -50%);
-  opacity: 0;
-  animation: wordBloom 1200ms ease forwards;
+  inset: 0;
+  width: 100% !important;
+  height: 100% !important;
 }
 
-.heart-initial {
-  position: absolute;
-  left: 50%;
-  top: 50%;
-  display: grid;
-  width: clamp(5rem, 24vw, 8.5rem);
-  aspect-ratio: 1;
-  place-items: center;
-  border: 1px solid rgba(255, 155, 216, 0.45);
-  border-radius: 50%;
-  color: #fff;
-  font-family: "Brush Script MT", "Segoe Script", cursive;
-  font-size: clamp(4.8rem, 21vw, 8rem);
-  text-shadow: 0 0 1rem #fff, 0 0 2rem var(--pink);
-  background: rgba(255, 79, 184, 0.08);
-  box-shadow: 0 0 2rem rgba(255, 79, 184, 0.28), inset 0 0 1.5rem rgba(255, 155, 216, 0.18);
-  transform: translate(-50%, -50%);
+.heart-webgl canvas {
+  display: block;
 }
 
 .site-shell {
@@ -137,26 +113,10 @@ textarea {
   margin: 0 auto;
   padding: clamp(1rem, 2.8vw, 2rem) 0 4rem;
   opacity: 0;
-  transform: translateY(1rem);
-  transition: opacity 900ms ease, transform 900ms ease;
-}
-
-.site-shell::before {
-  content: "\2665  \2665  \2665";
-  position: fixed;
-  left: 1.2rem;
-  bottom: 1rem;
-  color: rgba(255, 155, 216, 0.12);
-  font-size: 1.4rem;
-  letter-spacing: 0.55rem;
-  text-shadow: 0 0 1.2rem rgba(255, 79, 184, 0.28);
-  animation: floatHearts 7200ms ease-in-out infinite;
-  pointer-events: none;
 }
 
 .site-shell.is-visible {
   opacity: 1;
-  transform: translateY(0);
 }
 
 .hero-section {
@@ -178,15 +138,6 @@ textarea {
     linear-gradient(180deg, rgba(255, 79, 184, 0.08), transparent 56%);
   box-shadow: 0 1.8rem 4.5rem rgba(0, 0, 0, 0.5), 0 0 3.2rem rgba(255, 79, 184, 0.1);
   backdrop-filter: blur(1.25rem);
-  transition: transform 280ms ease, border-color 280ms ease, box-shadow 280ms ease;
-}
-
-@media (hover: hover) {
-  .glass-panel:hover {
-    border-color: rgba(255, 205, 236, 0.34);
-    box-shadow: 0 2rem 4.8rem rgba(0, 0, 0, 0.52), 0 0 3.7rem rgba(255, 79, 184, 0.14);
-    transform: translateY(-0.12rem);
-  }
 }
 
 .hero-content {
@@ -196,7 +147,6 @@ textarea {
   flex-direction: column;
   justify-content: center;
   padding: clamp(1.6rem, 5vw, 4.4rem);
-  animation: cardRise 950ms ease both;
 }
 
 .hero-photo {
@@ -209,7 +159,6 @@ textarea {
   border: 1px solid rgba(255, 159, 219, 0.32);
   box-shadow: 0 1.6rem 3rem rgba(0, 0, 0, 0.5), 0 0 2.8rem rgba(255, 79, 184, 0.22);
   isolation: isolate;
-  animation: cardRise 1050ms ease 140ms both;
 }
 
 .hero-photo::before {
@@ -314,7 +263,6 @@ h2 {
   border-radius: 1.2rem;
   background: linear-gradient(135deg, rgba(0, 0, 0, 0.32), rgba(255, 79, 184, 0.08));
   box-shadow: inset 0 0 1.4rem rgba(255, 79, 184, 0.1), 0 0 1.7rem rgba(255, 79, 184, 0.1);
-  animation: counterGlow 3600ms ease-in-out infinite;
 }
 
 .love-counter span {
@@ -341,19 +289,6 @@ h2 {
 .message-section {
   margin-top: clamp(1.4rem, 3vw, 2.2rem);
   padding: clamp(1.45rem, 4vw, 2.8rem);
-  animation: cardRise 900ms ease both;
-}
-
-.flower-section {
-  animation-delay: 140ms;
-}
-
-.memories-section {
-  animation-delay: 220ms;
-}
-
-.message-section {
-  animation-delay: 300ms;
 }
 
 .section-heading {
@@ -379,30 +314,6 @@ h2 {
   border-radius: var(--radius-md);
 }
 
-.flower-stage::before,
-.flower-stage::after {
-  content: "";
-  position: absolute;
-  width: 0.45rem;
-  height: 0.45rem;
-  border-radius: 50%;
-  background: rgba(255, 215, 239, 0.76);
-  box-shadow:
-    5rem 2rem 0 rgba(255, 155, 216, 0.42),
-    -5rem 4rem 0 rgba(180, 119, 255, 0.34),
-    7rem -3rem 0 rgba(255, 255, 255, 0.3),
-    -7rem -2rem 0 rgba(255, 79, 184, 0.36);
-  filter: blur(0.02rem);
-  animation: sparkleFloat 5200ms ease-in-out infinite;
-}
-
-.flower-stage::after {
-  width: 0.32rem;
-  height: 0.32rem;
-  animation-delay: 1700ms;
-  opacity: 0.8;
-}
-
 .flower-glow {
   position: absolute;
   width: min(26rem, 78vw);
@@ -410,7 +321,6 @@ h2 {
   border-radius: 50%;
   background: radial-gradient(circle, rgba(255, 79, 184, 0.38), rgba(180, 119, 255, 0.18) 42%, transparent 72%);
   filter: blur(0.3rem);
-  animation: softGlow 2600ms ease-in-out infinite;
 }
 
 .flower-image {
@@ -420,7 +330,6 @@ h2 {
   max-height: 23rem;
   object-fit: contain;
   filter: drop-shadow(0 0 1.8rem rgba(255, 79, 184, 0.42));
-  animation: flowerFloat 3200ms ease-in-out infinite;
 }
 
 .flower-image.is-missing {
@@ -489,12 +398,10 @@ h2 {
   height: 100%;
   object-fit: cover;
   opacity: 1;
-  transition: opacity 420ms ease, transform 520ms ease;
 }
 
 .carousel-frame img.is-changing {
   opacity: 0;
-  transform: scale(1.03);
 }
 
 .photo-placeholder {
@@ -527,7 +434,6 @@ h2 {
   cursor: pointer;
   background: radial-gradient(circle, rgba(255, 110, 196, 0.35), rgba(255, 79, 184, 0.1));
   box-shadow: 0 0 1.4rem rgba(255, 79, 184, 0.24);
-  transition: transform 220ms ease, border-color 220ms ease, background 220ms ease, box-shadow 220ms ease;
 }
 
 .carousel-button:hover,
@@ -535,7 +441,6 @@ h2 {
   border-color: #ffd4ee;
   background: radial-gradient(circle, rgba(255, 110, 196, 0.5), rgba(255, 79, 184, 0.2));
   box-shadow: 0 0 1.9rem rgba(255, 79, 184, 0.45);
-  transform: translateY(-0.1rem) scale(1.03);
   outline: none;
 }
 
@@ -554,11 +459,9 @@ h2 {
   border-radius: 50%;
   cursor: pointer;
   background: rgba(255, 255, 255, 0.34);
-  transition: transform 220ms ease, background 220ms ease, box-shadow 220ms ease;
 }
 
 .carousel-dot:hover {
-  transform: scale(1.12);
   background: rgba(255, 155, 216, 0.74);
 }
 
@@ -590,105 +493,6 @@ h2 {
   font-size: clamp(1.08rem, 2vw, 1.32rem);
   white-space: pre-line;
   text-shadow: 0 0 1.4rem rgba(255, 79, 184, 0.16);
-}
-
-@keyframes heartEntrance {
-  from {
-    opacity: 0;
-    transform: scale(0.86);
-  }
-  to {
-    opacity: 1;
-    transform: scale(1);
-  }
-}
-
-@keyframes heartPulse {
-  0%,
-  100% {
-    transform: scale(1);
-  }
-  50% {
-    transform: scale(1.035);
-  }
-}
-
-@keyframes wordBloom {
-  from {
-    opacity: 0;
-    filter: blur(0.45rem);
-  }
-  to {
-    opacity: 1;
-    filter: blur(0);
-  }
-}
-
-@keyframes softGlow {
-  0%,
-  100% {
-    opacity: 0.65;
-    transform: scale(0.94);
-  }
-  50% {
-    opacity: 1;
-    transform: scale(1.05);
-  }
-}
-
-@keyframes flowerFloat {
-  0%,
-  100% {
-    transform: translateY(0);
-  }
-  50% {
-    transform: translateY(-0.55rem);
-  }
-}
-
-@keyframes cardRise {
-  from {
-    opacity: 0;
-    transform: translateY(1.2rem);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
-@keyframes counterGlow {
-  0%,
-  100% {
-    box-shadow: inset 0 0 1.4rem rgba(255, 79, 184, 0.1), 0 0 1.7rem rgba(255, 79, 184, 0.1);
-  }
-  50% {
-    box-shadow: inset 0 0 1.8rem rgba(255, 79, 184, 0.14), 0 0 2.2rem rgba(255, 79, 184, 0.18);
-  }
-}
-
-@keyframes sparkleFloat {
-  0%,
-  100% {
-    opacity: 0.36;
-    transform: translateY(0) scale(0.92);
-  }
-  50% {
-    opacity: 0.78;
-    transform: translateY(-0.8rem) scale(1.08);
-  }
-}
-
-@keyframes floatHearts {
-  0%,
-  100% {
-    opacity: 0.28;
-    transform: translateY(0);
-  }
-  50% {
-    opacity: 0.52;
-    transform: translateY(-0.7rem);
-  }
 }
 
 @media (max-width: 720px) {
@@ -781,20 +585,5 @@ h2 {
   .carousel-button {
     grid-row: 2;
     justify-self: center;
-  }
-
-  .site-shell::before {
-    display: none;
-  }
-}
-
-@media (prefers-reduced-motion: reduce) {
-  *,
-  *::before,
-  *::after {
-    scroll-behavior: auto !important;
-    animation-duration: 1ms !important;
-    animation-iteration-count: 1 !important;
-    transition-duration: 1ms !important;
   }
 }
