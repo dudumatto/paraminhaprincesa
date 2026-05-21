@@ -4,8 +4,8 @@ const DATA_INICIO_NAMORO = "2026-01-24T15:30:00-03:00";
 const TEMPO_LOADING_MS = 7600;
 
 const FRASES_ROMANTICAS = {
-  intro: "Desde o primeiro dia, cada detalhe ficou mais bonito porque existe voce.",
-  contador: "E a nossa historia continua florescendo.",
+  intro: "Desde o primeiro dia, cada detalhe ficou mais bonito porque existe você.",
+  contador: "E a nossa história continua florescendo.",
   mensagem:
     `Meu amor,
 
